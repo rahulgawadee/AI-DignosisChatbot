@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import base64
 from io import BytesIO
+import os
 
 # Prevent Matplotlib GUI errors
 matplotlib.use('Agg')
@@ -144,4 +145,4 @@ def predict():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
