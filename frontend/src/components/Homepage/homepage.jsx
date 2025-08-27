@@ -42,9 +42,10 @@ const Footer = () => (
 // The complete, restyled homepage with a new hero section and color scheme.
 const Homepage = () => {
   // In a real app, you'd use useNavigate. For this example, we'll log to the console.
-  const handleGetStartedClick = () => {
+  const navigate = useNavigate();
 
-  useNavigate("/diagnosis");
+  const handleGetStartedClick = () => {
+    navigate("/diagnosis");
   };
 
   return (
