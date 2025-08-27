@@ -1,22 +1,20 @@
 services:
   - type: web
     name: ai-diagnosis-backend
-    runtime: python3
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT app:app
-    envVars:
-      - key: FLASK_ENV
-        value: production
-          cd frontend && npm ci && npm run build && cd ..
-          # ensure backend/static exists and copy build
-          mkdir -p static
-          cp -r frontend/dist/* static/ || true
-        else
-          echo "npm not found; skipping frontend build"
-        fi
-      fi
-      # Install python deps
+    runtime: python
+    pythonVersion: "3.12"  # Match your local version
+    buildCommand: |
+      pip install --upgrade pip
       pip install -r requirements.txt
+      
+      # Build frontend if npm is available
+      if command -v npm >/dev/null 2>&1; then
+        cd frontend && npm ci && npm run build && cd ..
+        mkdir -p static
+        cp -r frontend/dist/* static/ || true
+      else
+        echo "npm not found; skipping frontend build"
+      fi
     startCommand: gunicorn --bind 0.0.0.0:$PORT app:app
     envVars:
       - key: FLASK_ENV
