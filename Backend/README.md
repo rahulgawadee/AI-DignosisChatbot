@@ -1,4 +1,3 @@
-
 ### **🩺 AI Health Assistant - Symptom-Based Disease Prediction**  
 
 🚀 An advanced AI-powered **disease prediction system** that intelligently asks follow-up questions and continuously improves over time!  
@@ -52,16 +51,23 @@
 
 ## **🚀 How to Run**  
 ```bash
-# Backend Setup
-cd backend
-pip install -r requirements.txt
-python app.py
-
-# Frontend Setup
+# Build Frontend
 cd frontend
 npm install
-npm run dev
+npm run build
+cp -r dist ../backend/static
+
+# Backend Setup
+cd ../backend
+pip install -r requirements.txt
+python app.py
 ```
 
----
+## **🚀 Deployment on Render**
+1. Build frontend locally: `cd frontend && npm install && npm run build`.
+2. Commit the `frontend/dist` folder to your repo (so it's available on Render).
+3. Push code to Git.
+4. Connect repo to Render, set build command: `pip install -r requirements.txt`.
+5. Start command: `gunicorn --bind 0.0.0.0:$PORT app:app`.
+6. Deploy; the backend URL will serve the frontend from `../frontend/dist`.
 

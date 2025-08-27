@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import pandas as pd
 import numpy as np
@@ -13,7 +13,29 @@ import os
 # Prevent Matplotlib GUI errors
 matplotlib.use('Agg')
 
-app = Flask(__name__)
+# Determine static folder: prefer committed frontend/dist/build if present, otherwise use backend/static
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Candidate frontend build locations (check in order)
+candidates = [
+    os.path.normpath(os.path.join(base_dir, '..', 'frontend', 'dist')),
+    os.path.normpath(os.path.join(base_dir, '..', 'frontend', 'build')),  # CRA-style
+    os.path.join(base_dir, 'static'),
+]
+
+static_folder = None
+for cand in candidates:
+    if os.path.isdir(cand):
+        static_folder = cand
+        break
+
+# Fallback to backend/static even if it doesn't exist yet
+if static_folder is None:
+    static_folder = os.path.join(base_dir, 'static')
+
+print(f"Using static folder: {static_folder}")
+
+app = Flask(__name__, static_folder=static_folder, static_url_path='/')
 CORS(app, resources={r"/*": {"origins": "*"}})  # Allow frontend access
 
 # Load model and encoders
@@ -142,6 +164,39 @@ def predict():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/')
+def serve_frontend():
+    """Serve index.html (SPA). Try static_folder/index.html first, else serve absolute file if present."""
+    index_in_static = os.path.join(app.static_folder, 'index.html')
+    if os.path.isfile(index_in_static):
+        return app.send_static_file('index.html')
+    # try other likely locations (e.g., frontend/dist/index.html)
+    alt_index = os.path.normpath(os.path.join(base_dir, '..', 'frontend', 'dist', 'index.html'))
+    if os.path.isfile(alt_index):
+        return send_file(alt_index)
+    alt_index2 = os.path.normpath(os.path.join(base_dir, '..', 'frontend', 'build', 'index.html'))
+    if os.path.isfile(alt_index2):
+        return send_file(alt_index2)
+    return "Index file not found", 404
+
+@app.route('/<path:path>')
+def serve_static(path):
+    """Serve requested static asset if present; otherwise fallback to index.html for SPA routing."""
+    # Try to serve file from static_folder
+    candidate = os.path.join(app.static_folder, path)
+    if os.path.isfile(candidate):
+        # If file is inside static_folder, use send_file for correct absolute path serving
+        return send_file(candidate)
+    # Try other likely locations
+    alt_candidate = os.path.normpath(os.path.join(base_dir, '..', 'frontend', 'dist', path))
+    if os.path.isfile(alt_candidate):
+        return send_file(alt_candidate)
+    alt_candidate2 = os.path.normpath(os.path.join(base_dir, '..', 'frontend', 'build', path))
+    if os.path.isfile(alt_candidate2):
+        return send_file(alt_candidate2)
+    # Fallback to index.html so SPA routes work
+    return serve_frontend()
 
 
 if __name__ == '__main__':
